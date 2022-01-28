@@ -1,3 +1,5 @@
+import datetime
+
 from elasticsearch import Elasticsearch
 from flask import Flask, render_template, request, session
 from flask_cors import CORS
@@ -10,7 +12,6 @@ api = Api(app)
 parser = reqparse.RequestParser()
 CORS(app)
 es = Elasticsearch()
-print(__name__)
 
 if __name__ == '__main__':
     app.run(host="localhost", port=8000, debug=True)
@@ -38,22 +39,40 @@ def checkin():
     res = es.search(index='bookings',body=query)
     if res['hits']['hits'] != []:
         date = res['hits']['hits'][0]['_source']["date"]
-        print(date)
-        return {"status":"qr code valid"},200
+        now = datetime.datetime.now(datetime.timezone.utc).strftime("%d/%m/%Y")
+        if date==now:
+            ##################
+            # todo
+            ##################
+            return {"status":"qr code valid"},200
+        else:
+            return {"status": "qr code not valid"}, 422
     else:
         return {"status": "qr not found"}, 404
 
-@app.route('/read_qr', methods = ['POST'])
+@app.route('/checkout', methods = ['POST'])
 def checkout():
     parser.add_argument("id")
-
-    es.index(
-        index='lord-of-the-rings',
-        document={
-            'character': 'Aragon',
-            'quote': 'It is not this day.'
-        })
-
-    return {"status":"done"}
+    args = parser.parse_args()
+    query = {
+        "query": {
+            "term": {
+                "_id": args["id"]
+            }
+        }
+    }
+    res = es.search(index='bookings', body=query)
+    if res['hits']['hits'] != []:
+        date = res['hits']['hits'][0]['_source']["date"]
+        now = datetime.datetime.now(datetime.timezone.utc).strftime("%d/%m/%Y")
+        if date == now:
+            ##################
+            #todo
+            ##################
+            return {"status": "qr code valid"}, 200
+        else:
+            return {"status": "qr code not valid"}, 422
+    else:
+        return {"status": "qr not found"}, 404
 
 
