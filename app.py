@@ -3,7 +3,7 @@ from elasticsearch import Elasticsearch
 from flask import Flask, render_template, request, session
 from flask_cors import CORS
 from flask_restful import Api, reqparse
-
+import requests
 
 app = Flask(__name__)
 app.secret_key = 'B;}}S5Cx@->^^"hQT{T,GJ@YI*><17'
@@ -23,13 +23,15 @@ if __name__ == '__main__':
 
 @app.route('/signin/', methods = ['POST'])
 def singin():
-   parser.add_argument("username")
-   parser.add_argument("email")
-   parser.add_argument("password")
-   args = parser.parse_args()
-   h = hashlib.md5(args["password"].encode())
-   password=h.hexdigest()
-   query = "{\
+    parser.add_argument("name")
+    parser.add_argument("surname")
+    parser.add_argument("username")
+    parser.add_argument("email")
+    parser.add_argument("password")
+    args = parser.parse_args()
+    h = hashlib.md5(args["password"].encode())
+    password=h.hexdigest()
+    query = "{\
    \"query\": {\
    \"bool\": {\
      \"must\": [\
@@ -47,23 +49,19 @@ def singin():
    }\
    }\
    }"
-   res = es.search(index='users', body=query)
-   print(res)
+    #print(query)
+    res = es.search(index='users', body=query)
 
-   if res['hits']['hits'] == []:
-       """data = {'ad_id': 1053674,
-               'city': 'Houston',
-               'category': 'Cars',
-               'date_posted': datetime.datetime(2021, 1, 29, 19, 33),
-               'title': '2020 Chevrolet Silverado',
-               'body': "This brand new vehicle is the perfect truck for you.",
-               'phone': None}"""
-       es.index(index='users', document={ 'username':  args["username"] , 'email':  args["email"], 'password': password })
+    if res['hits']['hits'] == []:
+       es.index(index='users', document={ 'username':  args["username"] ,'name':  args["name"] ,'surname':  args["surname"] , 'email':  args["email"], 'password': password })
+       session["name"] = args["name"]
+       session["surname"] = args["surname"]
+       session['email'] = args["email"]
        session['username'] = args["username"]
        session['logged_in'] = True
        status = {"status": "created"}
        return status
-   else:
+    else:
        status = {"status": "username or email already in database"}
        return status
 
@@ -100,7 +98,12 @@ def login():
    print(args ,query , res)
    if res['hits']['hits'] != []:
        if res['hits']['hits'][0]['_source']["username"]==args["username"] and res['hits']['hits'][0]['_source']["password"]==password:
-           session['username'] = args["username"]
+           parser.add_argument("name")
+           parser.add_argument("surname")
+           args1 = parser.parse_args()
+           session["name"] = args1["name"]
+           session["surname"]= args1["surname"]
+           session['email'] = args["email"]
            session['logged_in'] = True
            status = {"status": "success"}
            return status
@@ -110,16 +113,29 @@ def login():
    status = {"status": "fail"}
    return status
 
-@app.route('/rings/', methods = ['POST'])
+@app.route('/booking/', methods = ['POST'])
 def rings():
-    es.index(
-        index='lord-of-the-rings',
-        document={
-            'character': 'Aragon',
-            'quote': 'It is not this day.'
-        })
+    if len(session) > 0:
+        if session['logged_in'] == True:
+            parser.add_argument("date")
+            parser.add_argument("place")
+            args = parser.parse_args()
+            doc={
+                    'email': session['email'],
+                    'name': session['name'],
+                    'surname': session['surname'],
+                    'place': args["place"],
+                    'date': args["date"],
+                }
+            es.index(index='bookings',document=doc)
 
-    return {"status":"done"}
+            """dictToSend = {'question': 'what is the answer?'}
+            res = requests.post('http://localhost:5000/qr_generator', json=dictToSend)
+            print('response from server:', res.text)
+            dictFromServer = res.json()"""
+
+            return {"status":"done"}
+    return {"status":"not authorized"}
 
 """@app.route('/rings/', methods = ['POST'])
 def rings():
