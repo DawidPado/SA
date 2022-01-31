@@ -4,15 +4,15 @@ from flask import request
 import sqlite3
 
 app = Flask(__name__)
-    
+
 """ 
 @app.route("/")
 def home():
     return render_template('demo.html')
 """   
 
-# Endpoint to be used at a specific time of the
-# day that deletes all the expired reservations and
+# Endpoint to be used at a specific time of the day
+# that deletes all the expired reservations and
 # adds all the new reservations of the day received
 # through a json list of ids
 @app.route('/reservations/update', methods = ['POST'])
@@ -69,13 +69,14 @@ def checkin(id):
     try:
         with con:
             #check if checked-in people are less than 500
-            count = con.execute("SELECT COUNT(1) from reservations WHERE checkin = 1")[0]
+            count = con.execute("SELECT COUNT(1) from reservations WHERE checkin = 1").fetchall()[0][0]
             if count>=500:
                 resp = jsonify(error="limit reached")
                 resp.status_code = 200
             
             #check if id is present in reservations of the day
-            result = con.execute("SELECT * from reservations WHERE id = '%s'" %id)[0]
+            result = con.execute("SELECT * from reservations WHERE id = '%s'" %id).fetchall()
+            
             if result :
                 #check in successful
                 con.execute("UPDATE reservations SET checkin = 1 WHERE id = '%s'" %id)
@@ -101,7 +102,7 @@ def checkout(id):
     try:
         with con:
             #check if id is present in reservations of the day and that it has checked-in
-            result = con.execute("SELECT * from reservations WHERE id = '%s' AND checkin = 1" %id)[0]
+            result = con.execute("SELECT * from reservations WHERE id = '%s' AND checkin = 1" %id).fetchall()
             if result :
                 #checkout successful
                 con.execute("DELETE FROM reservations WHERE id = '%s'" %id)
