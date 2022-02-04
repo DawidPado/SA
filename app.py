@@ -22,7 +22,8 @@ def hello():
 
 
 if __name__ == '__main__':
-    app.run(  debug=True)
+    app.run(debug=True)
+
 
 @app.route('/registration/', methods=['POST'])
 def singin():
@@ -34,18 +35,18 @@ def singin():
     args = parser.parse_args()
     h = hashlib.md5(args["password"].encode())
     password = h.hexdigest()
-    id=str(shortuuid.uuid())
+    id = str(shortuuid.uuid())
 
     statment = "INSERT INTO USERS VALUES (?,?,?,?,?,?)"
-    values=(id,args['name'],args['surname'],args['username'],args['email'],password)
+    values = (id, args['name'], args['surname'], args['username'], args['email'], password)
 
     con = sqlite3.connect('users.db')
     try:
         with con:
-            exist=False
-            res = con.execute("SELECT * FROM USERS WHERE username=? or email=?",(args['username'],args['email']))
+            exist = False
+            res = con.execute("SELECT * FROM USERS WHERE username=? or email=?", (args['username'], args['email']))
             for result in res:
-                exist=True
+                exist = True
                 break
             if not exist:
                 con.execute(statment, values)
@@ -54,15 +55,16 @@ def singin():
                 session['email'] = args["email"]
                 session['username'] = args["username"]
                 session['logged_in'] = True
-                status = {"status": "created"},200
+                status = {"status": "created"}, 200
             else:
-                status = {"status": "username or email already in database"},300
+                status = {"status": "username or email already in database"}, 300
             # parse and insert new reservations
     # SQL exception handler
     except sqlite3.Error:
-        status= {'status':'internal server error'},500
+        status = {'status': 'internal server error'}, 500
     con.close()
     return status
+
 
 @app.route('/login/', methods=['POST'])
 def login():
@@ -74,24 +76,25 @@ def login():
     con = sqlite3.connect('users.db')
     try:
         with con:
-            res = con.execute("SELECT * FROM USERS WHERE username=? or password=?", (args['username'], password))
-            found=False
+            res = con.execute("SELECT * FROM USERS WHERE username=? and password=?", (args['username'], password))
+            found = False
             for result in res:
                 session["name"] = result[1]
                 session["surname"] = result[2]
                 session['email'] = result[4]
                 session['username'] = result[3]
                 session['logged_in'] = True
-                status = {"status": "logged"},200
-                found=True
+                status = {"status": "logged"}, 200
+                found = True
             if not found:
-                status = {"status": "wrong username or password"},404
+                status = {"status": "wrong username or password"}, 404
             # parse and insert new reservations
     # SQL exception handler
     except sqlite3.Error:
         status = {'status': 'internal server error'}, 500
     con.close()
     return status
+
 
 @app.route('/booking/', methods=['POST'])
 def booking():
