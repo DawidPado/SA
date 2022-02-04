@@ -50,6 +50,7 @@ def checkin():
     else:
         return {"status": "qr not found"}, 404
 
+
 @app.route('/checkout', methods = ['POST'])
 def checkout():
     parser.add_argument("id")

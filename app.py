@@ -1,9 +1,11 @@
 import hashlib
+
 from elasticsearch import Elasticsearch
-from flask import Flask, render_template, request, session
+from flask import Flask, session
 from flask_cors import CORS
 from flask_restful import Api, reqparse
-import requests
+import sqlite3
+import shortuuid
 
 app = Flask(__name__)
 app.secret_key = 'B;}}S5Cx@->^^"hQT{T,GJ@YI*><17'
@@ -20,10 +22,9 @@ def hello():
 
 
 if __name__ == '__main__':
-    app.run(host="localhost", port=8000, debug=True)
+    app.run(  debug=True)
 
-
-@app.route('/signin/', methods=['POST'])
+@app.route('/registration/', methods=['POST'])
 def singin():
     parser.add_argument("name")
     parser.add_argument("surname")
@@ -33,42 +34,35 @@ def singin():
     args = parser.parse_args()
     h = hashlib.md5(args["password"].encode())
     password = h.hexdigest()
-    query = "{\
-   \"query\": {\
-   \"bool\": {\
-     \"must\": [\
-       {\
-         \"match\": {\
-           \"email\": \"" + args["email"] + "\"\
-         }\
-       },\
-       {\
-         \"match\": {\
-           \"username\": \"" + args["username"] + "\"\
-         }\
-       }\
-     ]\
-   }\
-   }\
-   }"
-    # print(query)
-    res = es.search(index='users', body=query)
+    id=str(shortuuid.uuid())
 
-    if res['hits']['hits'] == []:
-        es.index(index='users',
-                 document={'username': args["username"], 'name': args["name"], 'surname': args["surname"],
-                           'email': args["email"], 'password': password})
-        session["name"] = args["name"]
-        session["surname"] = args["surname"]
-        session['email'] = args["email"]
-        session['username'] = args["username"]
-        session['logged_in'] = True
-        status = {"status": "created"}
-        return status
-    else:
-        status = {"status": "username or email already in database"}
-        return status
+    statment = "INSERT INTO USERS VALUES (?,?,?,?,?,?)"
+    values=(id,args['name'],args['surname'],args['username'],args['email'],password)
 
+    con = sqlite3.connect('users.db')
+    try:
+        with con:
+            exist=False
+            res = con.execute("SELECT * FROM USERS WHERE username=? or email=?",(args['username'],args['email']))
+            for result in res:
+                exist=True
+                break
+            if not exist:
+                con.execute(statment, values)
+                session["name"] = args["name"]
+                session["surname"] = args["surname"]
+                session['email'] = args["email"]
+                session['username'] = args["username"]
+                session['logged_in'] = True
+                status = {"status": "created"},200
+            else:
+                status = {"status": "username or email already in database"},300
+            # parse and insert new reservations
+    # SQL exception handler
+    except sqlite3.Error:
+        status= {'status':'internal server error'},500
+    con.close()
+    return status
 
 @app.route('/login/', methods=['POST'])
 def login():
@@ -77,45 +71,31 @@ def login():
     args = parser.parse_args()
     h = hashlib.md5(args["password"].encode())
     password = h.hexdigest()
-    query = "{\
-\"query\": {\
-\"bool\": {\
-  \"must\": [\
-    {\
-      \"match\": {\
-        \"password\": \"" + password + "\"\
-      }\
-    },\
-    {\
-      \"match\": {\
-        \"username\": \"" + args["username"] + "\"\
-      }\
-    }\
-  ]\
-}\
-}\
-}"
-    # return {"status":args["username"]}
-    res = es.search(index='users', body=query)
-    print(args, query, res)
-    if res['hits']['hits'] != []:
-        if res['hits']['hits'][0]['_source']["username"] == args["username"] and res['hits']['hits'][0]['_source'][
-            "password"] == password:
-            session["name"] = res['hits']['hits'][0]['_source']["name"]
-            session["surname"] = res['hits']['hits'][0]['_source']["surname"]
-            session['email'] = res['hits']['hits'][0]['_source']["email"]
-            session['logged_in'] = True
-            status = {"status": "success"}
-            return status
-        else:
-            status = {"status": "wrong credential"}
-            return status
-    status = {"status": "fail"}
+    con = sqlite3.connect('users.db')
+    try:
+        with con:
+            res = con.execute("SELECT * FROM USERS WHERE username=? or password=?", (args['username'], password))
+            found=False
+            for result in res:
+                session["name"] = result[1]
+                session["surname"] = result[2]
+                session['email'] = result[4]
+                session['username'] = result[3]
+                session['logged_in'] = True
+                status = {"status": "logged"},200
+                found=True
+            if not found:
+                status = {"status": "wrong username or password"},404
+            # parse and insert new reservations
+    # SQL exception handler
+    except sqlite3.Error:
+        status = {'status': 'internal server error'}, 500
+    con.close()
     return status
 
-
 @app.route('/booking/', methods=['POST'])
-def rings():
+def booking():
+    print(session)
     if len(session) > 0:
         if session['logged_in'] == True:
             parser.add_argument("date")
