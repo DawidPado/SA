@@ -1,3 +1,4 @@
+import datetime
 import hashlib
 
 import requests
@@ -99,7 +100,6 @@ def login():
 
 @app.route('/booking/', methods=['POST'])
 def booking():
-    print(session)
     if len(session) > 0:
         if session['logged_in'] == True:
             parser.add_argument("date")
@@ -111,30 +111,24 @@ def booking():
             # (id text, date text,customer text,museum text,prize double )
             values = (id, args['date'], session['email'], args['museum'], prize)
             con = sqlite3.connect('database.db')
+            now = datetime.datetime.now(datetime.timezone.utc).strftime("%d/%m/%Y")
             try:
                 with con:
-                    dictToSend = {'id' : id}
-                    res = requests.post('http://someip:8080/', json=dictToSend) #sent to midleware
-                    dictFromServer = res.json()
-                    if dictFromServer['status']=='ok':
-                        con.execute(statment, values)
-                        status={'status':'ok'},200
+                    if now==args['date']:
+                        dictToSend = {'id' : id}
+                        res = requests.post('http://middleware:8080/', json=dictToSend) #sent to middleware
+                        dictFromServer = res.json()
+                        if dictFromServer['status']=='ok':
+                            con.execute(statment, values)
+                            status={'status':'ok'},200
+                        else:
+                            status = {'status': 'internal server error'}, 500
                     else:
-                        status = {'status': 'internal server error'}, 500
+                        con.execute(statment, values)
+                        status = {'status': 'ok'}, 200
             except sqlite3.Error:
                 status = {'status': 'internal server error'}, 500
             con.close()
             return status
     return {"status": "Unauthorized"},401
 
-
-"""@app.route('/rings/', methods = ['POST'])
-def rings():
-    es.index(
-        index='lord-of-the-rings',
-        document={
-            'character': 'Aragon',
-            'quote': 'It is not this day.'
-        })
-
-    return {"status":"done"}"""
