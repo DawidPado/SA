@@ -13,7 +13,7 @@ values=(terms[0],terms[1],terms[2],terms[3],terms[4],terms[5])
 statment="INSERT INTO USERS VALUES (?,?,?,?,?,?)"
 
 print(uuid.uuid4())
-con = sqlite3.connect('users.db')
+con = sqlite3.connect('database.db')
 try:
     with con:
         # delete all old reservations

@@ -1,5 +1,6 @@
 import hashlib
 
+import requests
 from elasticsearch import Elasticsearch
 from flask import Flask, session
 from flask_cors import CORS
@@ -40,7 +41,7 @@ def singin():
     statment = "INSERT INTO USERS VALUES (?,?,?,?,?,?)"
     values = (id, args['name'], args['surname'], args['username'], args['email'], password)
 
-    con = sqlite3.connect('users.db')
+    con = sqlite3.connect('database.db')
     try:
         with con:
             exist = False
@@ -73,7 +74,7 @@ def login():
     args = parser.parse_args()
     h = hashlib.md5(args["password"].encode())
     password = h.hexdigest()
-    con = sqlite3.connect('users.db')
+    con = sqlite3.connect('database.db')
     try:
         with con:
             res = con.execute("SELECT * FROM USERS WHERE username=? and password=?", (args['username'], password))
@@ -102,24 +103,31 @@ def booking():
     if len(session) > 0:
         if session['logged_in'] == True:
             parser.add_argument("date")
-            parser.add_argument("place")
+            parser.add_argument("museum")
             args = parser.parse_args()
-            doc = {
-                'email': session['email'],
-                'name': session['name'],
-                'surname': session['surname'],
-                'place': args["place"],
-                'date': args["date"],
-            }
-            x = es.index(index='bookings', document=doc)
-            print(x)
-            """dictToSend = {'question': 'what is the answer?'}
-            res = requests.post('http://localhost:5001/qr_generator', json=dictToSend)
-            print('response from server:', res.text)
-            dictFromServer = res.json()"""
-
-            return {"status": "done"}, 200
-    return {"status": "not authorized"}
+            id = str(shortuuid.uuid())
+            prize=10.00
+            statment = "INSERT INTO bookings VALUES (?,?,?,?,?)"
+            # (id text, date text,customer text,museum text,prize double )
+            values = (id, args['date'], session['email'], args['museum'], prize)
+            con = sqlite3.connect('database.db')
+            try:
+                with con:
+                    con.execute(statment, values)
+                    dictToSend = {'id' : id}
+                    res = requests.post('http://someip:8080/', json=dictToSend) #sent to midleware
+                    dictFromServer = res.json()
+                    if dictFromServer['status']=='ok':
+                        status={'status':'ok'},200
+                    else:
+                        statment = 'DELETE FROM bookings WHERE id=?'
+                        con.execute(statment,id)
+                        status = {'status': 'internal server error'}, 500
+            except sqlite3.Error:
+                status = {'status': 'internal server error'}, 500
+            con.close()
+            return status
+    return {"status": "Unauthorized"},401
 
 
 """@app.route('/rings/', methods = ['POST'])
