@@ -113,15 +113,13 @@ def booking():
             con = sqlite3.connect('database.db')
             try:
                 with con:
-                    con.execute(statment, values)
                     dictToSend = {'id' : id}
                     res = requests.post('http://someip:8080/', json=dictToSend) #sent to midleware
                     dictFromServer = res.json()
                     if dictFromServer['status']=='ok':
+                        con.execute(statment, values)
                         status={'status':'ok'},200
                     else:
-                        statment = 'DELETE FROM bookings WHERE id=?'
-                        con.execute(statment,id)
                         status = {'status': 'internal server error'}, 500
             except sqlite3.Error:
                 status = {'status': 'internal server error'}, 500
