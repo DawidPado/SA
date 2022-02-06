@@ -27,7 +27,7 @@ def updateReservations():
             for item in request.json["ids"]:
                 con.execute("INSERT INTO reservations VALUES ('%s', 0)" %item)
             #send successful response
-            resp = jsonify(success=True)
+            resp = jsonify(success=True, error = "none")
             resp.status_code = 201
     #SQL exception handler
     except sqlite3.Error:
@@ -48,7 +48,7 @@ def addReservation():
             #insert new reservation
             con.execute("INSERT INTO reservations VALUES ('%s', 0)" %id)
             #send successful response
-            resp = jsonify(success=True)
+            resp = jsonify(success=True, error = "none")
             resp.status_code = 201
     #SQL exception handler
     except sqlite3.Error:
@@ -73,7 +73,7 @@ def checkin():
             #check if checked-in people are less than 500
             count = con.execute("SELECT COUNT(1) from reservations WHERE checkin = 1").fetchall()[0][0]
             if count>=500:
-                resp = jsonify(error="limit reached")
+                resp = jsonify(success=False, error="limit reached")
                 resp.status_code = 200
             
             #check if id is present in reservations of the day
@@ -82,7 +82,7 @@ def checkin():
             if result :
                 #check in successful
                 con.execute("UPDATE reservations SET checkin = 1 WHERE id = '%s'" %id)
-                resp = jsonify(success=True)
+                resp = jsonify(success=True, error = "none")
                 resp.status_code = 200
             else:
                 #check-in failed
@@ -109,7 +109,7 @@ def checkout():
             if result :
                 #checkout successful
                 con.execute("DELETE FROM reservations WHERE id = '%s'" %id)
-                resp = jsonify(success=True)
+                resp = jsonify(success=True, error = "none")
                 resp.status_code = 200
             else:
                 #checkout failed
