@@ -38,14 +38,15 @@ def updateReservations():
     return resp
 
 #Endpoint to add a new reservation for the current day
-@app.route('/reservations/add/<id>')
-def addReservation(id):
+@app.route('/reservations/add/', methods = ['POST'])
+def addReservation():
+    id = request.json["data"]
     #connection to db
     con = sqlite3.connect('reservations.db')
     try:
         with con:
             #insert new reservation
-            con.execute("INSERT INTO reservations VALUES ('%s', 0)" % id)
+            con.execute("INSERT INTO reservations VALUES ('%s', 0)" %id)
             #send successful response
             resp = jsonify(success=True)
             resp.status_code = 201
@@ -62,8 +63,9 @@ def addReservation(id):
 # received id is available among the reservations
 # for the day, and in that case updates the
 # checkin value corresponding to the id to "true"
-@app.route("/reservations/checkin/<id>")
-def checkin(id):
+@app.route("/reservations/checkin", methods = ['POST'])
+def checkin():
+    id = request.json["data"]
     #connection to db
     con = sqlite3.connect('reservations.db')
     try:
@@ -95,8 +97,9 @@ def checkin(id):
 
 # Endpoint that, if the received id is inside the museum,
 # completes the checkout by deleting the id from the database
-@app.route("/reservations/checkout/<id>")
-def checkout(id):
+@app.route("/reservations/checkout", methods = ['POST'])
+def checkout():
+    id = request.json["data"]
     #connection to db
     con = sqlite3.connect('reservations.db')
     try:
