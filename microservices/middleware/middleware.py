@@ -24,7 +24,7 @@ def updateReservations():
         #delete all old reservations 
             con.execute("DELETE FROM reservations")
             #parse and insert new reservations
-            for item in request.json["data"]:
+            for item in request.json["ids"]:
                 con.execute("INSERT INTO reservations VALUES ('%s', 0)" %item)
             #send successful response
             resp = jsonify(success=True)
@@ -40,7 +40,7 @@ def updateReservations():
 #Endpoint to add a new reservation for the current day
 @app.route('/reservations/add/', methods = ['POST'])
 def addReservation():
-    id = request.json["data"]
+    id = request.json["id"]
     #connection to db
     con = sqlite3.connect('reservations.db')
     try:
@@ -65,7 +65,7 @@ def addReservation():
 # checkin value corresponding to the id to "true"
 @app.route("/reservations/checkin", methods = ['POST'])
 def checkin():
-    id = request.json["data"]
+    id = request.json["id"]
     #connection to db
     con = sqlite3.connect('reservations.db')
     try:
@@ -99,7 +99,7 @@ def checkin():
 # completes the checkout by deleting the id from the database
 @app.route("/reservations/checkout", methods = ['POST'])
 def checkout():
-    id = request.json["data"]
+    id = request.json["id"]
     #connection to db
     con = sqlite3.connect('reservations.db')
     try:
