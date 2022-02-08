@@ -2,14 +2,19 @@ from flask import Flask
 from flask import jsonify
 from flask import request
 import sqlite3
+import requests
 
 app = Flask(__name__)
 
-""" 
-@app.route("/")
+
+@app.route("/", methods = ["POST"])
 def home():
-    return render_template('demo.html')
-"""   
+    r = request
+    resp = jsonify(success=True)
+    resp.status_code = 200
+    print
+    return r.json
+ 
 
 # Endpoint to be used at a specific time of the day
 # that deletes all the expired reservations and
@@ -121,4 +126,12 @@ def checkout():
         resp.status_code = 500
     
     con.close()
+    return resp
+
+@app.route('/sendposition', methods = ['POST'])
+def sendPosition():
+    data = request.json
+    r = requests.post('http://127.0.0.1:5000/position/update', json=data)
+    resp = jsonify(success=True)
+    resp.status_code = 200
     return resp
