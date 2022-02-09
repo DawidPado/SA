@@ -1,12 +1,22 @@
+from math import sqrt
 from flask import Flask
 from flask import jsonify
 from flask import request
 import sqlite3
 from itsdangerous import json
 import requests
+import json
 
 app = Flask(__name__)
 app.config['JSON_SORT_KEYS'] = False
+
+def distanceCalc(user,item):
+    x1 = user["x"]
+    x2 = item["x"]
+    y1 = user["y"]
+    y2 = item["y"]
+    distance = sqrt((x2-x1)**2 + (y2-y1)**2)
+    return distance
 
 @app.route("/artworks/index")
 def index():
@@ -49,7 +59,7 @@ def index_by_museum(museum_id):
             artworks = []
             #select all artworks of one museum 
             results = con.execute("SELECT * FROM artworks WHERE museum_id = ?", [museum_id]).fetchall()
-            if(not results):
+            if(results):
                 for item in results:
                         artwork = {
                                     "x":item[1],
@@ -210,4 +220,36 @@ def delete(id):
         resp = jsonify(success=False, error="/artworks/manage/delete went wrong: " + ' '.join(er.args))
         resp.status_code = 500
     return resp       
-    pass
+    
+@app.route("/artworks/near/<user_id>")
+def getnear(user_id):
+    THRESHOLD = 2.0
+    with open('json_data.json') as json_file:
+        data = json.load(json_file)
+    i = 0
+    for item in data:
+        if(item["id"]==int(user_id)):
+            user = item
+            break
+    
+    getartwork = requests.get("http://127.0.0.1:5000/artworks/index/"+str(user["museum_id"]))
+    if(getartwork.json()["artworks"]):
+        nearartworks = []
+        for item in getartwork.json()["artworks"]:
+            distance = distanceCalc(user,item)
+            if(distance<=THRESHOLD):
+                item["distance"] = round(distance,1)
+                nearartworks.append(item)
+        resp = jsonify(success=True, error="none", artworks = nearartworks)
+        resp.status_code = 200
+    return resp
+
+@app.route("/positions", methods =["POST"])
+def positions():
+    #print(request.json)
+    json_string = json.dumps(request.json)
+    with open('json_data.json', 'w') as outfile:
+        outfile.write(json_string)
+    resp = jsonify(success=True, error="none")
+    resp.status_code = 200
+    return resp

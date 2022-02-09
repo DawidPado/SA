@@ -29,9 +29,9 @@ try:
         
         i = 0
         while i<50:
-            x = random.randint(0,100)
-            y = random.randint(0,100)
-            z = random.randint(0,100)
+            x = random.randint(0,10)
+            y = random.randint(0,10)
+            z = random.randint(0,10)
             museum_id = random.randint(1,3)
             author = names.get_last_name()
             year = random.randint(1900,2000)
