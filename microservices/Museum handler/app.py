@@ -17,9 +17,9 @@ es = Elasticsearch()
 if __name__ == '__main__':
     app.run(host="localhost", port=8000, debug=True)
 
-@app.route('/position/update')
-def localizator():  # put application's code here
-    parser.add_argument("id") #prenotation id/ id is unique so it can rappresent a visitor
+@app.route('/')
+def main():  # put application's code here
+    """parser.add_argument("id") #prenotation id/ id is unique so it can rappresent a visitor
     parser.add_argument("position")
     args = parser.parse_args()
     con = sqlite3.connect('database.db')
@@ -36,4 +36,4 @@ def localizator():  # put application's code here
     except sqlite3.Error:
         status = {'status': 'internal server error'}, 500
     con.close()
-    return status
+    return status"""
