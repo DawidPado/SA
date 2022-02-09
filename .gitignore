@@ -2,4 +2,4 @@
 .venv
 venv/
 /microservices/middleware/reservations.db
-"/microservices/Artworks curator/artworks.db"
+/microservices/Artworks\ curator/artworks.db
