@@ -6,6 +6,7 @@ import sqlite3
 from itsdangerous import json
 import requests
 import json
+from sys import stderr
 
 app = Flask(__name__)
 app.config['JSON_SORT_KEYS'] = False
@@ -28,6 +29,7 @@ def index():
             results = con.execute("SELECT * FROM artworks").fetchall()
             for item in results:
                     artwork = {
+                                "id":item[0],
                                 "x":item[1],
                                 "y":item[2],
                                 "z":item[3],
@@ -37,7 +39,8 @@ def index():
                                 "year":item[7],
                                 "title":item[8],
                                 "description":item[9],
-                                "image_path":item[10]
+                                "image_path":item[10],
+                                "watchtime":item[11]
                                 }
                     artworks.append(artwork)
             #send successful response
@@ -61,7 +64,7 @@ def index_by_museum(museum_id):
             results = con.execute("SELECT * FROM artworks WHERE museum_id = ?", [museum_id]).fetchall()
             if(results):
                 for item in results:
-                        artwork = {
+                        artwork = {"id":item[0],
                                     "x":item[1],
                                     "y":item[2],
                                     "z":item[3],
@@ -71,7 +74,8 @@ def index_by_museum(museum_id):
                                     "year":item[7],
                                     "title":item[8],
                                     "description":item[9],
-                                    "image_path":item[10]
+                                    "image_path":item[10],
+                                    "watchtime":item[11]
                                     }
                         artworks.append(artwork)
                 #send successful response
@@ -96,7 +100,8 @@ def show(id):
             #select all artworks of one museum 
             result = con.execute("SELECT * FROM artworks WHERE id = ?", [id]).fetchone()
             if(result!=None):
-                artwork = {
+                artwork = {         
+                                    "id":result[0],
                                     "x":result[1],
                                     "y":result[2],
                                     "z":result[3],
@@ -106,7 +111,8 @@ def show(id):
                                     "year":result[7],
                                     "title":result[8],
                                     "description":result[9],
-                                    "image_path":result[10]
+                                    "image_path":result[10],
+                                    "watchtime":result[11]
                                     }
                 resp = jsonify(artwork = artwork, success=True, error="none")
                 resp.status_code = 200
@@ -223,33 +229,72 @@ def delete(id):
     
 @app.route("/artworks/near/<user_id>")
 def getnear(user_id):
-    THRESHOLD = 2.0
-    with open('json_data.json') as json_file:
-        data = json.load(json_file)
-    i = 0
-    for item in data:
-        if(item["id"]==int(user_id)):
-            user = item
-            break
-    
-    getartwork = requests.get("http://127.0.0.1:5000/artworks/index/"+str(user["museum_id"]))
-    if(getartwork.json()["artworks"]):
-        nearartworks = []
-        for item in getartwork.json()["artworks"]:
-            distance = distanceCalc(user,item)
-            if(distance<=THRESHOLD):
-                item["distance"] = round(distance,1)
-                nearartworks.append(item)
-        resp = jsonify(success=True, error="none", artworks = nearartworks)
-        resp.status_code = 200
+    try:
+        con = sqlite3.connect("artworks.db")
+        with con:
+            artworks_ids = con.execute("SELECT * FROM near_artworks WHERE user_id = ?", [user_id]).fetchall()
+            if(artworks_ids):
+                nearartworks = []
+                for artwork_id in artworks_ids:
+                    artwork = requests.get("http://127.0.0.1:5000/artworks/show/" + str(artwork_id[1]))
+                    artwork = artwork.json()["artwork"]
+                    nearartworks.append(artwork)
+                resp = jsonify(artworks = nearartworks)
+                resp.status_code = 200
+            else:
+                resp = jsonify(success = False, error = "No nearby artworks")
+                resp.status_code = 404    
+    except sqlite3.Error as er:
+        resp = jsonify(success=False, error="Get nearby artworks went wrong: " + ' '.join(er.args))
+        resp.status_code = 500
     return resp
 
+#endpoint which the localizator microservice uses to send the positions of all the users inside all the museums
 @app.route("/positions", methods =["POST"])
 def positions():
-    #print(request.json)
-    json_string = json.dumps(request.json)
-    with open('json_data.json', 'w') as outfile:
-        outfile.write(json_string)
-    resp = jsonify(success=True, error="none")
-    resp.status_code = 200
+    #Gather all the positions from the localizator
+    positions = request.json
+
+    #set distance threshold
+    THRESHOLD = 2.0
+    try:
+        con = sqlite3.connect('artworks.db')
+        with con:
+
+            #everytime the nearby artworks change, so reset the near_artworks table
+            con.execute("DELETE FROM near_artworks")
+            i = 1
+
+            #for each museum (1,2,3) get its artworks...
+            while i <= 3:
+                get_museum_artworks = requests.get("http://127.0.0.1:5000/artworks/index/"+str(i))
+
+                #... and for each user... 
+                for item in positions:
+                    user = item
+
+                    #... if the user is inside that museum and if that museum has any artworks...
+                    if(user["museum_id"]==i and get_museum_artworks.json()["artworks"]):
+
+                        #... for each artwork... 
+                        for artwork in get_museum_artworks.json()["artworks"]:
+                            distance = distanceCalc(user,artwork)
+
+                            #... if the user is nearby...
+                            if(distance<=THRESHOLD):
+
+                                #insert a new row in the near_artworks table
+                                con.execute("INSERT INTO near_artworks (user_id, artwork_id) VALUES (?,?)", [user["id"],artwork["id"]])
+                                #increment the watchtime for that artwork in the artworks table
+                                con.execute('''UPDATE "artworks"
+                                                    SET "watchtime" = "watchtime" + 1
+                                                    WHERE id = ?;''', [artwork["id"]])        
+                        
+                i+=1
+            resp = jsonify(success=True, error="none")
+            resp.status_code = 200
+    except sqlite3.Error as er:
+        resp = jsonify(success=False, error="Insert into near_artworks went wrong: " + ' '.join(er.args))
+        resp.status_code = 500
+
     return resp

@@ -25,7 +25,10 @@ try:
                     year text,
                     title text, 
                     description text, 
-                    image_path text)''')
+                    image_path text,
+                    watchtime integer)''')
+        
+        
         
         i = 0
         while i<50:
@@ -49,12 +52,24 @@ try:
                         year,
                         title, 
                         description, 
-                        image_path) 
+                        image_path,
+                        watchtime) 
                         VALUES
-                        (?, ?, ?, 1, ?, ?, ?, ?, ?, ?)    
+                        (?, ?, ?, 1, ?, ?, ?, ?, ?, ?, 0)    
                         ''', [x,y,z,museum_id,author,year,title,description,path])
             print(str(i) + ") Done")
             i += 1
+
+        con.execute('''
+                    CREATE TABLE IF NOT EXISTS fav_artworks 
+                    (user_id integer, 
+                    artwork_id integer)''')
+        
+        con.execute('''
+                    CREATE TABLE IF NOT EXISTS near_artworks 
+                    (user_id integer, 
+                    artwork_id integer)''')
+
 except sqlite3.Error as er:
         print('SQLite error: %s' % (' '.join(er.args)))
         print("Exception class is: ", er.__class__)
