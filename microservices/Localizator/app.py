@@ -14,8 +14,7 @@ parser = reqparse.RequestParser()
 CORS(app)
 es = Elasticsearch()
 
-if __name__ == '__main__':
-    app.run(host="localhost", port=5003)
+
 
 
 @app.route('/ciao', methods=['POST'])
@@ -43,3 +42,6 @@ def localizator():  # put application's code here
         status = {'status': 'internal server error'}, 500
     con.close()
     return status
+
+if __name__ == '__main__':
+    app.run(host="localhost", port=5003, debug=True)

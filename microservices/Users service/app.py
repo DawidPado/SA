@@ -12,6 +12,7 @@ import sqlite3
 import shortuuid
 
 app = Flask(__name__)
+
 app.secret_key = 'B;}}S5Cx@->^^"hQT{T,GJ@YI*><17'
 api = Api(app)
 parser = reqparse.RequestParser()
@@ -19,14 +20,10 @@ CORS(app)
 print(__name__)
 
 
+
 @app.route("/")
 def hello():
     return "Hello World!"
-
-
-if __name__ == '__main__':
-    app.run(debug=True, port=5001)
-
 
 @app.route('/registration/', methods=['POST'])
 def singin():
@@ -76,7 +73,6 @@ def singin():
         status = {'status': 'db internal server error'}, 500
     con.close()
     return status
-
 
 @app.route('/login/', methods=['POST'])
 def login():
@@ -175,3 +171,6 @@ def make_payment(data):
 # se non e giorno corrente non lo manda al middlewere.
 
 #todo ms2 endopoit manda tutto di questo giorno che verra richiesto da uno script.
+
+if __name__ == '__main__':
+    app.run(debug=True, port=5001)

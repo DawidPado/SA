@@ -9,8 +9,6 @@ import json
 from sys import stderr
 
 app = Flask(__name__)
-if __name__ == "__main__":
-    app.run(debug=True, port=5005)
 app.config['JSON_SORT_KEYS'] = False
 
 def distanceCalc(user,item):
@@ -300,3 +298,6 @@ def positions():
         resp.status_code = 500
 
     return resp
+
+if __name__ == "__main__":
+    app.run(debug=True, port=5005)

@@ -13,9 +13,6 @@ api = Api(app)
 parser = reqparse.RequestParser()
 CORS(app)
 
-if __name__ == '__main__':
-    app.run(host="localhost", port=5002, debug=True)
-
 @app.route('/')
 def hello_world():  # put application's code here
     return 'Hello World! from ms2'
@@ -86,3 +83,6 @@ def booking():
         status = {'status': 'internal server error'}, 500
     con.close()
     return status
+
+if __name__ == '__main__':
+    app.run(host="localhost", port=5002, debug=True)
