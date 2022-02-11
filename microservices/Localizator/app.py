@@ -15,7 +15,7 @@ CORS(app)
 es = Elasticsearch()
 
 if __name__ == '__main__':
-    app.run(host="localhost", port=5002)
+    app.run(host="localhost", port=5003)
 
 
 @app.route('/ciao', methods=['POST'])

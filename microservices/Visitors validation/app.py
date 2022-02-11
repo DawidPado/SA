@@ -14,7 +14,7 @@ parser = reqparse.RequestParser()
 CORS(app)
 
 if __name__ == '__main__':
-    app.run(host="localhost", port=5001, debug=True)
+    app.run(host="localhost", port=5002, debug=True)
 
 @app.route('/')
 def hello_world():  # put application's code here
