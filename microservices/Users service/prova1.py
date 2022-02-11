@@ -16,6 +16,7 @@ app.secret_key = 'B;}}S5Cx@->^^"hQT{T,GJ@YI*><17'
 api = Api(app)
 parser = reqparse.RequestParser()
 CORS(app)
+es = Elasticsearch()
 print(__name__)
 
 
@@ -43,7 +44,7 @@ def singin():
     statment = "INSERT INTO USERS VALUES (?,?,?,?,?,?)"
     values = (id, args['name'], args['surname'], args['username'], args['email'], password)
 
-    con = sqlite3.connect('microservices/Users service/database.db')
+    con = sqlite3.connect('database.db')
     try:
         with con:
             exist = False

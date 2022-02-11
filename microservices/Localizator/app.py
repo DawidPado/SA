@@ -15,7 +15,13 @@ CORS(app)
 es = Elasticsearch()
 
 if __name__ == '__main__':
-    app.run(host="localhost", port=5002, debug=True)
+    app.run(host="localhost", port=5002)
+
+
+@app.route('/ciao', methods=['POST'])
+def ciao():  # put application's code here
+    print("ciao")
+    return{'email':session['email']}
 
 @app.route('/position/update')
 def localizator():  # put application's code here
