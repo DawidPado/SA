@@ -67,12 +67,12 @@ def booking():
         with con:
             res = con.execute("SELECT * FROM museums")
             for record in res:
-                museums[record[0]]=record[3] #row[0]==museum name #row[3]==mueum ip
+                museums[record[1]]=record[3] #row[1]==museum name #row[3]==mueum ip
             res=con.execute("SELECT * FROM bookings where date=?",(now))
             for record in res:
                 dictToSend = {'id': record[0]}
                 res = requests.post('http://' + museums[record[3]] + '/',
-                                    json=dictToSend)  # sent to middleware second ms museo, data, e utente
+                                    json=dictToSend)
                 dictFromServer = res.json()
                 if dictFromServer['status'] == 'ok':
                     status = {'status': 'ok'}, 200
