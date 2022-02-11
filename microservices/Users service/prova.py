@@ -3,7 +3,7 @@ import sqlite3
 import  uuid
 
 terms=[]
-terms.append('5')
+terms.append('1')
 terms.append('Dawid')
 terms.append('Pado')
 terms.append('Dawid')
@@ -13,7 +13,7 @@ values=(terms[0],terms[1],terms[2],terms[3],terms[4],terms[5])
 statment="INSERT INTO USERS VALUES (?,?,?,?,?,?)"
 
 print(uuid.uuid4())
-con = sqlite3.connect('microservices/Users service/database.db')
+con = sqlite3.connect('database.db')
 try:
     with con:
         # delete all old reservations

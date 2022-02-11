@@ -1,5 +1,7 @@
 import datetime
 import hashlib
+import sys
+import traceback
 
 import requests
 from elasticsearch import Elasticsearch
@@ -46,6 +48,10 @@ def singin():
     try:
         with con:
             exist = False
+            res = con.execute("SELECT * FROM USERS WHERE username=? or email=?", ('Dawid', 'Ciao'))
+            for record in res:
+                print(record[0])
+
             res = con.execute("SELECT * FROM USERS WHERE username=? or email=?", (args['username'], args['email']))
             for result in res:
                 exist = True
@@ -62,8 +68,13 @@ def singin():
                 status = {"status": "username or email already in database"}, 300
             # parse and insert new reservations
     # SQL exception handler
-    except sqlite3.Error:
-        status = {'status': 'internal server error'}, 500
+    except sqlite3.Error as er:
+        print('SQLite error: %s' % (' '.join(er.args)))
+        print("Exception class is: ", er.__class__)
+        print('SQLite traceback: ')
+        exc_type, exc_value, exc_tb = sys.exc_info()
+        print(traceback.format_exception(exc_type, exc_value, exc_tb))
+        status = {'status': 'db internal server error'}, 500
     con.close()
     return status
 
