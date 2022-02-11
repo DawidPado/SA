@@ -112,11 +112,12 @@ def booking():
             values = (id, args['date'], session['email'], args['museum'], prize)
             con = sqlite3.connect('database.db')
             now = datetime.datetime.now(datetime.timezone.utc).strftime("%d/%m/%Y")
+            # pr
             try:
                 with con:
                     if now==args['date']:
                         dictToSend = {'id' : id}
-                        res = requests.post('http://middleware:8080/', json=dictToSend) #sent to middleware
+                        res = requests.post('http://middleware:8080/', json=dictToSend) #sent to middleware second ms museo, data, e utente
                         dictFromServer = res.json()
                         if dictFromServer['status']=='ok':
                             con.execute(statment, values)
@@ -132,3 +133,9 @@ def booking():
             return status
     return {"status": "Unauthorized"},401
 
+#todo primo riceverre dati, check pagamento, mandare al 2 servizio e attendere il codice prenotazione da restituire al utente, ms 1 lista museo con orari e prezzi, e date
+
+#todo 2ms riceve richiesta dal primo per prenotarlo, chech giorno se corrisponde al corrente scrive al middlewere e salva comunque, salva nel tutte le info della prenotazione,
+# se non e giorno corrente non lo manda al middlewere.
+
+#todo ms2 endopoit manda tutto di questo giorno che verra richiesto da uno script.
