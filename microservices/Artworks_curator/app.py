@@ -19,6 +19,10 @@ def distanceCalc(user,item):
     distance = sqrt((x2-x1)**2 + (y2-y1)**2)
     return distance
 
+@app.route("/")
+def hello():
+    return ("Ciao")
+
 @app.route("/artworks/index")
 def index():
     con = sqlite3.connect('artworks.db')

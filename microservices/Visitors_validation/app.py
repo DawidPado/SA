@@ -56,7 +56,7 @@ def booking():
         return status
 
 @app.route('/send_all/', methods=['POST'])
-def booking():
+def send_bookings():
     now = datetime.datetime.now(datetime.timezone.utc).strftime("%d/%m/%Y")
     con = sqlite3.connect('database.db')
     museums=dict()
