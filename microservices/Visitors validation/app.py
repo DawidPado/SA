@@ -1,6 +1,7 @@
 import datetime
+import sqlite3
 
-from elasticsearch import Elasticsearch
+import shortuuid
 from flask import Flask, render_template, request, session
 from flask_cors import CORS
 from flask_restful import Api, reqparse
@@ -11,7 +12,6 @@ app.secret_key = 'B;}}S5Cx@->^^"hQT{T,GJ@YI*><17'
 api = Api(app)
 parser = reqparse.RequestParser()
 CORS(app)
-es = Elasticsearch()
 
 if __name__ == '__main__':
     app.run(host="localhost", port=8000, debug=True)
@@ -21,59 +21,65 @@ def hello_world():  # put application's code here
     return 'Hello World! from ms2'
 
 
-@app.route('/checkin', methods = ['POST'])
-def checkin():
-
-    # qr code will be generated on client side by booking id
-    # qr code è una rappresentazione grafica del id quidni nessun problema su dove è generato
-
-    parser.add_argument("id")
-    args = parser.parse_args()
-    query = {
-        "query": {
-            "term": {
-                "_id": args["id"]
-            }
-        }
-    }
-    res = es.search(index='bookings',body=query)
-    if res['hits']['hits'] != []:
-        date = res['hits']['hits'][0]['_source']["date"]
+@app.route('/booking/', methods=['POST'])
+def booking():
+        parser.add_argument("date")
+        parser.add_argument("museum")
+        parser.add_argument("prize")
+        parser.add_argument("customer")
+        args = parser.parse_args()
+        id = str(shortuuid.uuid())
+        statment = "INSERT INTO bookings VALUES (?,?,?,?,?)"
+        # (id text, date text,customer text,museum text,prize double )
+        values = (id, args['date'], args['customer'], args['museum'], args['prize'])
+        con = sqlite3.connect('database.db')
         now = datetime.datetime.now(datetime.timezone.utc).strftime("%d/%m/%Y")
-        if date==now:
-            ##################
-            # todo
-            ##################
-            return {"status":"qr code valid"},200
-        else:
-            return {"status": "qr code not valid"}, 422
-    else:
-        return {"status": "qr not found"}, 404
+        # pr
+        try:
+            with con:
+                if now==args['date']:
+                    res = con.execute("SELECT ip FROM museums WHERE name=?",
+                                      (args['museum']))
+                    for ip in res:
+                        dictToSend = {'id' : id}
+                        res = requests.post('http://'+ip+'/', json=dictToSend) #sent to middleware second ms museo, data, e utente
+                        dictFromServer = res.json()
+                        if dictFromServer['status']=='ok':
+                            con.execute(statment, values)
+                            status={'status':'ok'},200
+                        else:
+                            status = {'status': 'internal server error'}, 500
+                else:
+                    con.execute(statment, values)
+                    status = {'status': 'ok',
+                              'code': id}, 200
+        except sqlite3.Error:
+            status = {'status': 'internal server error'}, 500
+        con.close()
+        return status
 
-
-@app.route('/checkout', methods = ['POST'])
-def checkout():
-    parser.add_argument("id")
-    args = parser.parse_args()
-    query = {
-        "query": {
-            "term": {
-                "_id": args["id"]
-            }
-        }
-    }
-    res = es.search(index='bookings', body=query)
-    if res['hits']['hits'] != []:
-        date = res['hits']['hits'][0]['_source']["date"]
-        now = datetime.datetime.now(datetime.timezone.utc).strftime("%d/%m/%Y")
-        if date == now:
-            ##################
-            #todo
-            ##################
-            return {"status": "qr code valid"}, 200
-        else:
-            return {"status": "qr code not valid"}, 422
-    else:
-        return {"status": "qr not found"}, 404
-
-
+@app.route('/send_all/', methods=['POST'])
+def booking():
+    now = datetime.datetime.now(datetime.timezone.utc).strftime("%d/%m/%Y")
+    con = sqlite3.connect('database.db')
+    museums=dict()
+    try:
+        with con:
+            res = con.execute("SELECT * FROM museums")
+            for record in res:
+                museums[record[0]]=record[3] #row[0]==museum name #row[3]==mueum ip
+            res=con.execute("SELECT * FROM bookings where date=?",(now))
+            for record in res:
+                dictToSend = {'id': record[0]}
+                res = requests.post('http://' + museums[record[3]] + '/',
+                                    json=dictToSend)  # sent to middleware second ms museo, data, e utente
+                dictFromServer = res.json()
+                if dictFromServer['status'] == 'ok':
+                    status = {'status': 'ok'}, 200
+                else:
+                    status = {'status': 'internal server error'}, 500
+                    break
+    except sqlite3.Error:
+        status = {'status': 'internal server error'}, 500
+    con.close()
+    return status

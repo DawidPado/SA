@@ -104,34 +104,60 @@ def booking():
         if session['logged_in'] == True:
             parser.add_argument("date")
             parser.add_argument("museum")
+            parser.add_argument("payment")
+            parser.add_argument("prize")
             args = parser.parse_args()
-            id = str(shortuuid.uuid())
-            prize=10.00
-            statment = "INSERT INTO bookings VALUES (?,?,?,?,?)"
-            # (id text, date text,customer text,museum text,prize double )
-            values = (id, args['date'], session['email'], args['museum'], prize)
+            values = (args['date'], args['prize'], args['museum'])
+            statment = "SELECT * FROM schedules WHERE date=? and prize=? and museum=?"
             con = sqlite3.connect('database.db')
-            now = datetime.datetime.now(datetime.timezone.utc).strftime("%d/%m/%Y")
-            # pr
+            found = False
+            error=False
+            status={}
             try:
                 with con:
-                    if now==args['date']:
-                        dictToSend = {'id' : id}
-                        res = requests.post('http://middleware:8080/', json=dictToSend) #sent to middleware second ms museo, data, e utente
-                        dictFromServer = res.json()
-                        if dictFromServer['status']=='ok':
-                            con.execute(statment, values)
-                            status={'status':'ok'},200
-                        else:
-                            status = {'status': 'internal server error'}, 500
-                    else:
-                        con.execute(statment, values)
-                        status = {'status': 'ok'}, 200
+                    res = con.execute(statment,values)
+                    for result in res:
+                        found = True
+                        break
             except sqlite3.Error:
+                error=True
                 status = {'status': 'internal server error'}, 500
             con.close()
-            return status
-    return {"status": "Unauthorized"},401
+            if error:
+                return status
+            if not found:
+                return {'status': 'schedule not found'}, 404
+            if check_payment(args["payment"]):
+                dictToSend={"date":args['date'],
+                            "museum":args['museum'],
+                            "prize":args["prize"],
+                            "customer":session['customre']}
+                res = requests.post('http://localhost:5001/', json=dictToSend)
+                dictFromServer = res.json()
+                if dictFromServer['status']=='ok':
+                    status={'status':'ok',
+                            'code':dictFromServer['code']},200
+                    make_payment(args["payment"])
+                else:
+                    status = {'status': 'internal server error'}, 500
+                return status
+            else:
+                return {'status':'Bad request'},400
+        return {"status": "Unauthorized"},401
+
+
+def check_payment(data):
+    #------
+    #some code
+    checked = True
+    #------
+    return checked
+def make_payment(data):
+    #------
+    #some code
+    done = True
+    #------
+    return done
 
 #todo primo riceverre dati, check pagamento, mandare al 2 servizio e attendere il codice prenotazione da restituire al utente, ms 1 lista museo con orari e prezzi, e date
 
