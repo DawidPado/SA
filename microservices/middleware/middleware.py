@@ -6,6 +6,8 @@ import requests
 
 app = Flask(__name__)
 
+if __name__ == '__main__':
+    app.run(host="localhost", port=8080, debug=True)
 
 @app.route("/", methods = ["POST"])
 def home():

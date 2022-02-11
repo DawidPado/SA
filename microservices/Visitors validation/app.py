@@ -14,7 +14,7 @@ parser = reqparse.RequestParser()
 CORS(app)
 
 if __name__ == '__main__':
-    app.run(host="localhost", port=8000, debug=True)
+    app.run(host="localhost", port=5001, debug=True)
 
 @app.route('/')
 def hello_world():  # put application's code here
@@ -42,9 +42,9 @@ def booking():
                                       (args['museum']))
                     for ip in res:
                         dictToSend = {'id' : id}
-                        res = requests.post('http://'+ip+'/', json=dictToSend) #sent to middleware second ms museo, data, e utente
+                        res = requests.post('http://'+ip+'/reservations/add/', json=dictToSend) #sent to middleware second ms museo, data, e utente
                         dictFromServer = res.json()
-                        if dictFromServer['status']=='ok':
+                        if dictFromServer['success']==True:
                             con.execute(statment, values)
                             status={'status':'ok'},200
                         else:
@@ -68,13 +68,16 @@ def booking():
             res = con.execute("SELECT * FROM museums")
             for record in res:
                 museums[record[1]]=record[3] #row[1]==museum name #row[3]==mueum ip
-            res=con.execute("SELECT * FROM bookings where date=?",(now))
-            for record in res:
-                dictToSend = {'id': record[0]}
-                res = requests.post('http://' + museums[record[3]] + '/',
+            for museum in museums:
+                res = con.execute("SELECT * FROM bookings where date=? and museum=?", (now,museum))
+                ids=[]
+                for record in res:
+                    ids.append(record[0])
+                dictToSend = {'ids': ids}
+                res = requests.post('http://' + museums[museum] + '/reservations/update',
                                     json=dictToSend)
                 dictFromServer = res.json()
-                if dictFromServer['status'] == 'ok':
+                if dictFromServer['success'] == True:
                     status = {'status': 'ok'}, 200
                 else:
                     status = {'status': 'internal server error'}, 500
