@@ -40,7 +40,7 @@ def singin():
     statment = "INSERT INTO USERS VALUES (?,?,?,?,?,?)"
     values = (id, args['name'], args['surname'], args['username'], args['email'], password)
 
-    con = sqlite3.connect('microservices/Users service/database.db')
+    con = sqlite3.connect('database.db')
     try:
         with con:
             exist = False
@@ -104,7 +104,7 @@ def login():
     return status
 
 
-@app.route('/booking/', methods=['POST'])
+@app.route('/booking', methods=['POST'])
 def booking():
     if len(session) > 0:
         if session['logged_in'] == True:
@@ -137,8 +137,8 @@ def booking():
                 dictToSend={"date":args['date'],
                             "museum":args['museum'],
                             "prize":args["prize"],
-                            "customer":session['customre']}
-                res = requests.post('http://localhost:5001/', json=dictToSend)
+                            "customer":session['email']}
+                res = requests.post('http://localhost:5002/booking', json=dictToSend)
                 dictFromServer = res.json()
                 if dictFromServer['status']=='ok':
                     status={'status':'ok',

@@ -44,7 +44,7 @@ def singin():
     statment = "INSERT INTO USERS VALUES (?,?,?,?,?,?)"
     values = (id, args['name'], args['surname'], args['username'], args['email'], password)
 
-    con = sqlite3.connect('database.db')
+    con = sqlite3.connect('../Users service/database.db')
     try:
         with con:
             exist = False
@@ -86,7 +86,7 @@ def login():
     args = parser.parse_args()
     h = hashlib.md5(args["password"].encode())
     password = h.hexdigest()
-    con = sqlite3.connect('database.db')
+    con = sqlite3.connect('../Users service/database.db')
     try:
         with con:
             res = con.execute("SELECT * FROM USERS WHERE username=? and password=?", (args['username'], password))
@@ -120,7 +120,7 @@ def booking():
             args = parser.parse_args()
             values = (args['date'], args['prize'], args['museum'])
             statment = "SELECT * FROM schedules WHERE date=? and prize=? and museum=?"
-            con = sqlite3.connect('database.db')
+            con = sqlite3.connect('../Users service/database.db')
             found = False
             error=False
             status={}

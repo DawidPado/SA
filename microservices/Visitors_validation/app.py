@@ -18,7 +18,7 @@ def hello_world():  # put application's code here
     return 'Hello World! from ms2'
 
 
-@app.route('/booking/', methods=['POST'])
+@app.route('/booking', methods=['POST'])
 def booking():
         parser.add_argument("date")
         parser.add_argument("museum")
@@ -31,16 +31,20 @@ def booking():
         values = (id, args['date'], args['customer'], args['museum'], args['prize'])
         con = sqlite3.connect('database.db')
         now = datetime.datetime.now(datetime.timezone.utc).strftime("%d/%m/%Y")
-        # pr
+        print(values)
         try:
             with con:
                 if now==args['date']:
+                    print(args['museum'])
                     res = con.execute("SELECT ip FROM museums WHERE name=?",
-                                      (args['museum']))
+                                      (args['museum'],))
+                    print(1)
                     for ip in res:
                         dictToSend = {'id' : id}
-                        res = requests.post('http://'+ip+'/reservations/add/', json=dictToSend) #sent to middleware second ms museo, data, e utente
+                        print(dictToSend)
+                        res = requests.post(ip[0]+'reservations/add/', json=dictToSend) #sent to middleware second ms museo, data, e utente
                         dictFromServer = res.json()
+                        print(dictFromServer)
                         if dictFromServer['success']==True:
                             con.execute(statment, values)
                             status={'status':'ok'},200
@@ -50,7 +54,8 @@ def booking():
                     con.execute(statment, values)
                     status = {'status': 'ok',
                               'code': id}, 200
-        except sqlite3.Error:
+        except sqlite3.Error as er:
+            print('SQLite error: %s' % (' '.join(er.args)))
             status = {'status': 'internal server error'}, 500
         con.close()
         return status
