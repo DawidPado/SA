@@ -47,7 +47,8 @@ def booking():
                         print(dictFromServer)
                         if dictFromServer['success']==True:
                             con.execute(statment, values)
-                            status={'status':'ok'},200
+                            status={'status': 'ok',
+                              'code': id}, 200
                         else:
                             status = {'status': 'internal server error'}, 500
                 else:
