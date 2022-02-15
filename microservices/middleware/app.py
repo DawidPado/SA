@@ -127,13 +127,13 @@ def checkout():
     con.close()
     return resp
 
-@app.route('/sendposition', methods = ['POST'])
-def sendPosition():
+@app.route('/sendpositions', methods = ['POST'])
+def sendPositions():
     data = request.json
-    r = requests.post('http://127.0.0.1:5000/position/update', json=data)
-    resp = jsonify(success=True)
-    resp.status_code = 200
+    r = requests.post('http://127.0.0.1:5003/positions/update', json=data)
+    resp = jsonify(success = r.json()["success"], error = r.json()["error"])
+    resp.status_code = r.status_code
     return resp
 
 if __name__ == '__main__':
-    app.run(host="localhost", port=5003, debug=True)
+    app.run(host="localhost", port=5010, debug=True)
