@@ -6,6 +6,10 @@ import requests
 
 app = Flask(__name__)
 
+@app.route('/prova')
+def prova():
+    return jsonify("ciao")
+
 @app.route("/", methods = ["POST"])
 def home():
     r = request
@@ -22,7 +26,7 @@ def home():
 @app.route('/reservations/update', methods = ['POST'])
 def updateReservations():
     #connection to db
-    con = sqlite3.connect('reservations.db')
+    con = sqlite3.connect('./microservices/middleware/reservations.db')
     try:
         with con:
         #delete all old reservations 
@@ -46,7 +50,7 @@ def updateReservations():
 def addReservation():
     id = request.json["id"]
     #connection to db
-    con = sqlite3.connect('reservations.db')
+    con = sqlite3.connect('./microservices/middleware/reservations.db')
     try:
         with con:
             #insert new reservation
@@ -71,7 +75,7 @@ def addReservation():
 def checkin():
     id = request.json["id"]
     #connection to db
-    con = sqlite3.connect('reservations.db')
+    con = sqlite3.connect('./microservices/middleware/reservations.db')
     try:
         with con:
             #check if checked-in people are less than 500
@@ -105,7 +109,7 @@ def checkin():
 def checkout():
     id = request.json["id"]
     #connection to db
-    con = sqlite3.connect('reservations.db')
+    con = sqlite3.connect('./microservices/middleware/reservations.db')
     try:
         with con:
             #check if id is present in reservations of the day and that it has checked-in

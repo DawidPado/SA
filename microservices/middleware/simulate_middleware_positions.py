@@ -16,7 +16,7 @@ data = {
 }
 def simulatePositions():
     try:
-        con = sqlite3.connect('reservations.db')
+        con = sqlite3.connect('./microservices/middleware/reservations.db')
         with con:
             reservations = con.execute('SELECT * FROM reservations').fetchall()
             positions = []
@@ -30,14 +30,12 @@ def simulatePositions():
                 positions.append(position)
             museum = {"museum":1}
             data = [positions,museum]
+            r = requests.post('http://127.0.0.1:5010/sendpositions', json=data)
+            print(r.json())
     except sqlite3.Error as er:
         error="simulating positions went wrong: " + ' '.join(er.args)
         print(error)
-
-    r = requests.post('http://127.0.0.1:5010/sendpositions', json=data)
-    print(r.json())
     
-
 l = task.LoopingCall(simulatePositions)
 l.start(timeout) # call every sixty seconds
 

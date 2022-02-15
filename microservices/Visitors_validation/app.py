@@ -29,7 +29,7 @@ def booking():
         statment = "INSERT INTO bookings VALUES (?,?,?,?,?)"
         # (id text, date text,customer text,museum text,prize double )
         values = (id, args['date'], args['customer'], args['museum'], args['prize'])
-        con = sqlite3.connect('database.db')
+        con = sqlite3.connect('./microservices/Users_service/database.db')
         now = datetime.datetime.now(datetime.timezone.utc).strftime("%d/%m/%Y")
         print(values)
         try:
@@ -64,7 +64,7 @@ def booking():
 @app.route('/send_all/', methods=['POST'])
 def send_bookings():
     now = datetime.datetime.now(datetime.timezone.utc).strftime("%d/%m/%Y")
-    con = sqlite3.connect('database.db')
+    con = sqlite3.connect('./microservices/Users_service/database.db')
     museums=dict()
     try:
         with con:

@@ -9,7 +9,7 @@ from lorem_text import lorem
 
 r = RandomWords()
 
-con = sqlite3.connect('artworks.db')
+con = sqlite3.connect("./microservices/Artworks_curator/artworks.db")
 
 try:
     with con:

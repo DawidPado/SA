@@ -16,7 +16,9 @@ def distanceCalc(user,item):
     x2 = item["x"]
     y1 = user["y"]
     y2 = item["y"]
-    distance = sqrt((x2-x1)**2 + (y2-y1)**2)
+    z1 = user["z"]
+    z2 = item["z"]
+    distance = sqrt((x2-x1)**2 + (y2-y1)**2 + (z2-z1)**2)
     return distance
 
 @app.route("/")
@@ -25,7 +27,7 @@ def hello():
 
 @app.route("/artworks/index")
 def index():
-    con = sqlite3.connect('artworks.db')
+    con = sqlite3.connect('./microservices/Artworks_curator/artworks.db')
     try:
         with con:
             artworks = []
@@ -60,7 +62,7 @@ def index():
 
 @app.route("/artworks/index/<museum_id>")
 def index_by_museum(museum_id):
-    con = sqlite3.connect('artworks.db')
+    con = sqlite3.connect('./microservices/Artworks_curator/artworks.db')
     try:
         with con:
             artworks = []
@@ -98,7 +100,7 @@ def index_by_museum(museum_id):
 
 @app.route("/artworks/show/<id>")
 def show(id):
-    con = sqlite3.connect('artworks.db')
+    con = sqlite3.connect('./microservices/Artworks_curator/artworks.db')
     try:
         with con:
             #select all artworks of one museum 
@@ -143,7 +145,7 @@ def create():
     description = artwork["description"]
     path = artwork["image_path"]
     try:
-        con = sqlite3.connect('artworks.db')
+        con = sqlite3.connect('./microservices/Artworks_curator/artworks.db')
         with con:
             con.execute('''
                         INSERT INTO artworks 
@@ -183,9 +185,9 @@ def update():
     description = artwork["description"]
     path = artwork["image_path"]
     try:
-        getartwork = requests.get("http://127.0.0.1:5000/artworks/show/"+str(id))
+        getartwork = requests.get("http://127.0.0.1:5005/artworks/show/"+str(id))
         if(getartwork.json()["success"]==True):
-            con = sqlite3.connect('artworks.db')
+            con = sqlite3.connect('./microservices/Artworks_curator/artworks.db')
             with con:
                 con.execute('''
                             UPDATE artworks 
@@ -216,9 +218,9 @@ def update():
 @app.route("/artworks/manage/delete/<id>", methods = ["POST"])
 def delete(id):
     try:
-        con = sqlite3.connect('artworks.db')
+        con = sqlite3.connect('./microservices/Artworks_curator/artworks.db')
         with con:
-            getartwork = requests.get("http://127.0.0.1:5000/artworks/show/"+str(id))
+            getartwork = requests.get("http://127.0.0.1:5005/artworks/show/"+str(id))
             if(getartwork.json()["success"]==True):
                 con.execute("DELETE FROM artworks WHERE id = ?",[id])
                 resp = jsonify(success=True, error="none")
@@ -234,13 +236,13 @@ def delete(id):
 @app.route("/artworks/near/<user_id>")
 def getnear(user_id):
     try:
-        con = sqlite3.connect("artworks.db")
+        con = sqlite3.connect("./microservices/Artworks_curator/artworks.db")
         with con:
             artworks_ids = con.execute("SELECT * FROM near_artworks WHERE user_id = ?", [user_id]).fetchall()
             if(artworks_ids):
                 nearartworks = []
                 for artwork_id in artworks_ids:
-                    artwork = requests.get("http://127.0.0.1:5000/artworks/show/" + str(artwork_id[1]))
+                    artwork = requests.get("http://127.0.0.1:5005/artworks/show/" + str(artwork_id[1]))
                     artwork = artwork.json()["artwork"]
                     nearartworks.append(artwork)
                 resp = jsonify(artworks = nearartworks)
@@ -262,37 +264,41 @@ def positions():
     #set distance threshold
     THRESHOLD = 2.0
     try:
-        con = sqlite3.connect('artworks.db')
+        con = sqlite3.connect('./microservices/Artworks_curator/artworks.db')
         with con:
-
+            #print("entered with", file=stderr)
             #everytime the nearby artworks change, so reset the near_artworks table
             con.execute("DELETE FROM near_artworks")
             i = 1
-
+            #print("executed delete all", file=stderr)
             #for each museum (1,2,3) get its artworks...
             while i <= 3:
-                get_museum_artworks = requests.get("http://127.0.0.1:5000/artworks/index/"+str(i))
-
+                get_museum_artworks = requests.get("http://127.0.0.1:5005/artworks/index/"+str(i)).json()["artworks"]
+                #print("got artworks of museum", file=stderr)
+                #print("artworks are non empty: " + str(len(get_museum_artworks)), file=stderr)
                 #... and for each user... 
                 for item in positions:
                     user = item
-
+                    #print("entered for item in positions", file=stderr)
                     #... if the user is inside that museum and if that museum has any artworks...
-                    if(user["museum_id"]==i and get_museum_artworks.json()["artworks"]):
-
+                    #print("user location: " + str(user["museum_id"]) + " i: " + str(i), file=stderr)
+                    #print(type(user["museum_id"]), file=stderr)
+                    #print(type(i), file=stderr)
+                    if(int(user["museum_id"])==i):
+                        #print(user["museum_id"]==i, file=stderr)
                         #... for each artwork... 
-                        for artwork in get_museum_artworks.json()["artworks"]:
+                        for artwork in get_museum_artworks:
                             distance = distanceCalc(user,artwork)
-
+                            print("calculated distance: " + str(distance), file=stderr)
                             #... if the user is nearby...
                             if(distance<=THRESHOLD):
-
+                                print("distance smaller than threshold", file=stderr)
                                 #insert a new row in the near_artworks table
                                 con.execute("INSERT INTO near_artworks (user_id, artwork_id) VALUES (?,?)", [user["id"],artwork["id"]])
                                 #increment the watchtime for that artwork in the artworks table
                                 con.execute('''UPDATE "artworks"
                                                     SET "watchtime" = "watchtime" + 1
-                                                    WHERE id = ?;''', [artwork["id"]])        
+                                                    WHERE id = ?;''', [artwork["id"]])   
                         
                 i+=1
             resp = jsonify(success=True, error="none")

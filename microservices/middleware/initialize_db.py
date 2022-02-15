@@ -2,7 +2,7 @@ import sqlite3
 import random
 import string
 
-con = sqlite3.connect('reservations.db')
+con = sqlite3.connect('./microservices/middleware/reservations.db')
 
 try:
     with con:

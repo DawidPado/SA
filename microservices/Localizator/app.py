@@ -29,7 +29,7 @@ def localizator():  # put application's code here
     museum_id = request.json[1]["museum"]
     try:
         statement = "INSERT INTO positions (museum, x, y, z, booking_id) VALUES (?,?,?,?,?)"
-        con = sqlite3.connect('database.db')
+        con = sqlite3.connect('./microservices/Localizator/database.db')
         with con:
             con.execute("DELETE FROM positions WHERE museum = ?",[museum_id])
             for position in positions:
@@ -41,25 +41,6 @@ def localizator():  # put application's code here
         resp = jsonify(success=False, error="/positions/update went wrong: " + ' '.join(er.args))
         resp.status_code = 500
     return resp
-
-    """ parser.add_argument("id") #prenotation id/ id is unique so it can rappresent a visitor
-    parser.add_argument("position")
-    args = parser.parse_args()
-    con = sqlite3.connect('database.db')
-    try:
-        with con:
-            exist = False
-            res = con.execute("SELECT ip FROM IPs")
-            for ip in res:
-                dictToSend = {'id': args['id'],
-                              'position': args['position'],
-                              }
-                requests.post(ip+'/crowd', json=dictToSend)  # sent to middleware
- """
-    """ except sqlite3.Error:
-        status = {'status': 'internal server error'}, 500
-    con.close()
-    return status """
 
 if __name__ == '__main__':
     app.run(host="localhost", port=5003, debug=True)

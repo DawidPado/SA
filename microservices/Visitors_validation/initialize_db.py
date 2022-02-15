@@ -1,5 +1,5 @@
 import sqlite3
-con = sqlite3.connect('database.db')
+con = sqlite3.connect('./microservices/Visitors_validation/database.db')
 
 try:
     with con:
