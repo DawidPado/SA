@@ -4,6 +4,7 @@ import string
 from twisted.internet import task, reactor
 
 timeout = 5.0 # Sixty seconds
+positions = []
 data = {
     "id":"",
     "position":{
@@ -13,13 +14,19 @@ data = {
     }
 }
 def simulatePositions():
-    data["id"] = ''.join(random.choices(string.ascii_uppercase + string.digits, k=10))
-    data["position"]["x"] = random.randint(0, 100)
-    data["position"]["y"] = random.randint(0, 100)
-    data["position"]["z"] = random.randint(0, 100)
-    r = requests.post('http://127.0.0.1:5000/sendposition', json=data)
+    positions = []
+    i = 0
+    while i<500:
+        position = {
+            "id":''.join(random.choices(string.ascii_uppercase + string.digits, k=10)),
+            "x": random.randint(0,10),
+            "y": random.randint(0,10),
+            "z": random.randint(0,10)
+        }
+        positions.append(position)
+    r = requests.post('http://127.0.0.1:5000/sendposition', json=positions)
     print(r.json())
-    pass
+    
 
 l = task.LoopingCall(simulatePositions)
 l.start(timeout) # call every sixty seconds

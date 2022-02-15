@@ -136,4 +136,4 @@ def sendPosition():
     return resp
 
 if __name__ == '__main__':
-    app.run(host="localhost", port=5010, debug=True)
+    app.run(host="localhost", port=5003, debug=True)
