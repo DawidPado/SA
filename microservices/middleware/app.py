@@ -46,7 +46,7 @@ def updateReservations():
     return resp
 
 #Endpoint to add a new reservation for the current day
-@app.route('/reservations/add/', methods = ['POST'])
+@app.route('/reservations/add', methods = ['POST'])
 def addReservation():
     id = request.json["id"]
     #connection to db

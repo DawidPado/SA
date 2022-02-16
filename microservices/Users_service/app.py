@@ -25,7 +25,7 @@ print(__name__)
 def hello():
     return "Hello World!"
 
-@app.route('/registration/', methods=['POST'])
+@app.route('/registration', methods=['POST'])
 def singin():
     parser.add_argument("name")
     parser.add_argument("surname")
@@ -74,7 +74,7 @@ def singin():
     con.close()
     return status
 
-@app.route('/login/', methods=['POST'])
+@app.route('/login', methods=['POST'])
 def login():
     parser.add_argument("username")
     parser.add_argument("password")
