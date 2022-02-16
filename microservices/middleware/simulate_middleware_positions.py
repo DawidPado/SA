@@ -18,7 +18,7 @@ def simulatePositions():
     try:
         con = sqlite3.connect('./microservices/middleware/reservations.db')
         with con:
-            reservations = con.execute('SELECT * FROM reservations').fetchall()
+            reservations = con.execute('SELECT * FROM reservations WHERE checkin = 1').fetchall()
             positions = []
             for reservation in reservations:
                 position = {

@@ -1,11 +1,12 @@
 from flask import Flask
 from flask import jsonify
 from flask import request
+from flask import session
 import sqlite3
 import requests
 
 app = Flask(__name__)
-
+app.secret_key = 'B;}}S5Cx@->^^"hQT{T,GJ@YI*><17'
 @app.route('/prova')
 def prova():
     return jsonify("ciao")
@@ -90,7 +91,8 @@ def checkin():
             if result :
                 #check in successful
                 con.execute("UPDATE reservations SET checkin = 1 WHERE id = '%s'" %id)
-                resp = jsonify(success=True, error = "none")
+                session["booking_id"] = id
+                resp = jsonify(success=True, error = "none", booking_id = session["booking_id"], user_id = session["id"])
                 resp.status_code = 200
             else:
                 #check-in failed
@@ -105,9 +107,9 @@ def checkin():
 
 # Endpoint that, if the received id is inside the museum,
 # completes the checkout by deleting the id from the database
-@app.route("/reservations/checkout", methods = ['POST'])
+@app.route("/reservations/checkout")
 def checkout():
-    id = request.json["id"]
+    id = session["booking_id"]
     #connection to db
     con = sqlite3.connect('./microservices/middleware/reservations.db')
     try:
@@ -140,4 +142,4 @@ def sendPositions():
     return resp
 
 if __name__ == '__main__':
-    app.run(host="localhost", port=5010, debug=True)
+    app.run(port=5010, debug=True)

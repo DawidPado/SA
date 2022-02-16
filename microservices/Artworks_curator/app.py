@@ -8,9 +8,10 @@ import requests
 import json
 from sys import stderr
 import random
-
+from flask import session
 app = Flask(__name__)
 app.config['JSON_SORT_KEYS'] = False
+app.secret_key = 'B;}}S5Cx@->^^"hQT{T,GJ@YI*><17'
 
 def distanceCalc(user,item):
     x1 = user["x"]
@@ -234,12 +235,12 @@ def delete(id):
         resp.status_code = 500
     return resp       
     
-@app.route("/artworks/near/<user_id>")
-def getnear(user_id):
+@app.route("/artworks/near/<booking_id>")
+def getnear(booking_id):
     try:
         con = sqlite3.connect("./microservices/Artworks_curator/artworks.db")
         with con:
-            artworks_ids = con.execute("SELECT * FROM near_artworks WHERE user_id = ?", [user_id]).fetchall()
+            artworks_ids = con.execute("SELECT * FROM near_artworks WHERE user_id = ?", [booking_id]).fetchall()
             if(artworks_ids):
                 nearartworks = []
                 for artwork_id in artworks_ids:
@@ -256,9 +257,31 @@ def getnear(user_id):
         resp.status_code = 500
     return resp
 
+@app.route("/artworks/near/me")
+def getnearme():
+    try:
+        con = sqlite3.connect("./microservices/Artworks_curator/artworks.db")
+        with con:
+            artworks_ids = con.execute("SELECT * FROM near_artworks WHERE user_id = ?", [session["booking_id"]]).fetchall()
+            if(artworks_ids):
+                nearartworks = []
+                for artwork_id in artworks_ids:
+                    artwork = requests.get("http://127.0.0.1:5005/artworks/show/" + str(artwork_id[1]))
+                    artwork = artwork.json()["artwork"]
+                    nearartworks.append(artwork)
+                resp = jsonify(artworks = nearartworks)
+                resp.status_code = 200
+            else:
+                resp = jsonify(success = False, error = "No nearby artworks to user with booking id " + session["booking_id"])
+                resp.status_code = 404    
+    except sqlite3.Error as er:
+        resp = jsonify(success=False, error="Get nearby artworks went wrong: " + ' '.join(er.args))
+        resp.status_code = 500
+    return resp
+
 @app.route("/artworks/favourite/add", methods=["POST"])
 def setfavourite():
-    user_id = request.json["user_id"]
+    user_id = session["id"]
     artwork_id = request.json["artwork_id"]
     try:
         con = sqlite3.connect("./microservices/Artworks_curator/artworks.db")
@@ -288,8 +311,45 @@ def getfavourite(user_id):
         resp.status_code = 500
     return resp
 
+@app.route("/artworks/favourite/get/me")
+def getfavouriteme():
+    try:
+        con = sqlite3.connect("./microservices/Artworks_curator/artworks.db")
+        with con:
+            results = con.execute("SELECT * FROM fav_artworks WHERE user_id = ?",[session["id"]]).fetchall()
+            artworks = []
+            for result in results:
+                getartwork = requests.get("http://127.0.0.1:5005/artworks/show/"+str(result[1])).json()["artwork"]
+                artworks.append(getartwork)
+            resp = jsonify(artworks = artworks, success=True,error="none")
+            resp.status_code = 200
+    except sqlite3.Error as er:
+        resp = jsonify(success=False, error="Set favourite artworks went wrong: " + ' '.join(er.args))
+        resp.status_code = 500
+    return resp
+
 @app.route("/artworks/recommended/get/<user_id>")
 def getrecommended(user_id):
+    #idealmente implementato tramite algoritmi di AI ma per semplicità restituisco 20 artwork random
+    try:
+        con = sqlite3.connect("./microservices/Artworks_curator/artworks.db")
+        with con: 
+            i = 0
+            artworks = []
+            while i<20:
+                id = random.randint(1,150)
+                getartwork = requests.get("http://127.0.0.1:5005/artworks/show/"+str(id)).json()["artwork"]
+                artworks.append(getartwork)
+                i += 1
+            resp = jsonify(artworks = artworks, success=True,error="none")
+            resp.status_code = 200
+    except sqlite3.Error as er:
+        resp = jsonify(success=False, error="Set favourite artworks went wrong: " + ' '.join(er.args))
+        resp.status_code = 500
+    return resp
+
+@app.route("/artworks/recommended/get/me")
+def getrecommendedme():
     #idealmente implementato tramite algoritmi di AI ma per semplicità restituisco 20 artwork random
     try:
         con = sqlite3.connect("./microservices/Artworks_curator/artworks.db")

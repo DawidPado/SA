@@ -54,6 +54,7 @@ def singin():
                 break
             if not exist:
                 con.execute(statment, values)
+                session["id"] = id
                 session["name"] = args["name"]
                 session["surname"] = args["surname"]
                 session['email'] = args["email"]
@@ -87,6 +88,7 @@ def login():
             res = con.execute("SELECT * FROM USERS WHERE username=? and password=?", (args['username'], password))
             found = False
             for result in res:
+                session["id"] = result[0]
                 session["name"] = result[1]
                 session["surname"] = result[2]
                 session['email'] = result[4]
@@ -125,9 +127,9 @@ def booking():
                     for result in res:
                         found = True
                         break
-            except sqlite3.Error:
+            except sqlite3.Error as er:
                 error=True
-                status = {'status': 'internal server error'}, 500
+                status = {'status': 'internal server error', 'error':' '.join(er.args)}, 500
             con.close()
             if error:
                 return status
@@ -145,11 +147,11 @@ def booking():
                             'code':dictFromServer['code']},200
                     make_payment(args["payment"])
                 else:
-                    status = {'status': 'internal server error'}, 500
+                    status = {'status': 'internal server error','error':dictFromServer['error']}, 500
                 return status
             else:
                 return {'status':'Bad request'},400
-        return {"status": "Unauthorized"},401
+        return {"status": "Unauthorized"},401 
 
 
 def check_payment(data):

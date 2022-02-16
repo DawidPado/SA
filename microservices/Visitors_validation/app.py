@@ -29,7 +29,7 @@ def booking():
         statment = "INSERT INTO bookings VALUES (?,?,?,?,?)"
         # (id text, date text,customer text,museum text,prize double )
         values = (id, args['date'], args['customer'], args['museum'], args['prize'])
-        con = sqlite3.connect('./microservices/Users_service/database.db')
+        con = sqlite3.connect('./microservices/Visitors_validation/database.db')
         now = datetime.datetime.now(datetime.timezone.utc).strftime("%d/%m/%Y")
         print(values)
         try:
@@ -42,7 +42,7 @@ def booking():
                     for ip in res:
                         dictToSend = {'id' : id}
                         print(dictToSend)
-                        res = requests.post(ip[0]+'reservations/add/', json=dictToSend) #sent to middleware second ms museo, data, e utente
+                        res = requests.post(ip[0]+'reservations/add', json=dictToSend) #sent to middleware second ms museo, data, e utente
                         dictFromServer = res.json()
                         print(dictFromServer)
                         if dictFromServer['success']==True:
@@ -50,14 +50,14 @@ def booking():
                             status={'status': 'ok',
                               'code': id}, 200
                         else:
-                            status = {'status': 'internal server error'}, 500
+                            status = {'status': 'internal server error','error':'failed /reservation/add'}, 500
                 else:
                     con.execute(statment, values)
                     status = {'status': 'ok',
                               'code': id}, 200
         except sqlite3.Error as er:
             print('SQLite error: %s' % (' '.join(er.args)))
-            status = {'status': 'internal server error'}, 500
+            status = {'status': 'internal server error','error':' '.join(er.args)}, 500
         con.close()
         return status
 
