@@ -3,3 +3,6 @@
 venv/
 /microservices/middleware/reservations.db
 /microservices/Artworks\ curator/artworks.db
+/microservices/Localizator/database.db
+/microservices/Users_service/database.db
+/microservices/Visitors_validation/database.db
