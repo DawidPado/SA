@@ -30,7 +30,7 @@ def booking():
         # (id text, date text,customer text,museum text,prize double )
         values = (id, args['date'], args['customer'], args['museum'], args['prize'])
         con = sqlite3.connect('./microservices/Visitors_validation/database.db')
-        now = datetime.datetime.now(datetime.timezone.utc).strftime("%d/%m/%Y")
+        now = datetime.datetime.now().strftime("%d/%m/%Y")
         print(values)
         try:
             with con:

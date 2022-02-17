@@ -92,24 +92,24 @@ def checkin():
                 #check in successful
                 con.execute("UPDATE reservations SET checkin = 1 WHERE id = '%s'" %id)
                 session["booking_id"] = id
-                resp = jsonify(success=True, error = "none", booking_id = session["booking_id"], user_id = session["id"])
+                resp = jsonify(success=True, error = "none")
                 resp.status_code = 200
             else:
                 #check-in failed
                 resp = jsonify(success=False, error="ID not found")
                 resp.status_code = 200
     #SQL exception handler
-    except sqlite3.Error:
-            resp = jsonify(success=False, error="/checkin went wrong")
+    except sqlite3.Error as er:
+            resp = jsonify(success=False, error="/checkin went wrong: " + ' '.join(er.args))
             resp.status_code = 500
     con.close()
     return resp
 
 # Endpoint that, if the received id is inside the museum,
 # completes the checkout by deleting the id from the database
-@app.route("/reservations/checkout")
+@app.route("/reservations/checkout", methods = ["POST"])
 def checkout():
-    id = session["booking_id"]
+    id = request.json["id"]
     #connection to db
     con = sqlite3.connect('./microservices/middleware/reservations.db')
     try:
